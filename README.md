@@ -6,7 +6,7 @@ This is a assignment which is writing a hero_chassis_controller,and use it to co
 
 **Keywords:** Robomaster,ROS,ros_control,chassis controller
 
-###License
+### License
 
 The source code is released under a BSD 3-Clause license.
 
