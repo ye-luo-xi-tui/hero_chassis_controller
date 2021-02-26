@@ -2,7 +2,9 @@
 
 ## Overview
 
-This is a assignment which is writing a hero_chassis_controller,and use it to control a virtual chassis in gazebo.
+This is a assignment which is writing a hero_chassis_controller,and use it to control a virtual chassis in gazebo. Now
+it can control four mecanum wheels with PID controllers.You can publish commands on topic "/cmd_vel" with geometry/Twist
+message.
 
 **Keywords:** Robomaster,ROS,ros_control,chassis controller
 
