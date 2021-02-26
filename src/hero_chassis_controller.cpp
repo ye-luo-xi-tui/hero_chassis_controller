@@ -63,6 +63,10 @@ void HeroChassisController::getchassisstate(const geometry_msgs::TwistConstPtr &
   Vx = msg->linear.x;
   Vy = msg->linear.y;
   yaw = msg->angular.z;
+  com1 = Vx-Vy-yaw*0.4875;
+  com2 = Vx+Vy+yaw*0.4875;
+  com3 = Vx+Vy-yaw*0.4875;
+  com4 = Vx-Vy+yaw*0.4875;
 }
 
 }// namespace
