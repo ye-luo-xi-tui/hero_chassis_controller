@@ -4,21 +4,23 @@
   <version>0.1.0</version>
   <description>a chassis controller which can control hero's chassis in gazebo</description>
   <maintainer email="1536117624@qq.com">Zhenyu Ye</maintainer>
-  <maintainer email="TODO">Liya Cai</maintainer>
+  <maintainer email="12331313@qq.com">Liya Cai</maintainer>
   <license>BSD</license>
   <author email="1536117624@qq.com">Zhenyu Ye</author>
-  <author email="TODO">Liya Cai</author>
+  <author>Liya Cai</author>
+  
   <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>roslint</depend>
   <depend>controller_interface</depend>
   <depend>forward_command_controller</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
+  <depend>control_toolbox</depend>
   <depend>rm_description</depend>
-
-
-  <!-- The export tag contains other, unspecified, tags -->
+  <depend>geometry_msgs</depend>
+  
   <export>
-    <!-- Other tools can request additional information be placed here -->
-
+    <controller_interface plugin="${prefix}/hero_chassis_controller_plugins.xml"/>
   </export>
 </package>

@@ -10,8 +10,8 @@ This is a assignment which is writing a hero_chassis_controller,and use it to co
 
 The source code is released under a BSD 3-Clause license.
 
-**Author:YeZhenyu,CaiLiya
-Affiliation:多喝岩浆
+**Author:YeZhenyu,CaiLiya \
+Affiliation:多喝岩浆 \
 Maitainer:YeZhenyu,Cailiya**
 
 The hero_chassis_controller package has been not beginning to make.This is unresearch code.
