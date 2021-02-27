@@ -31,7 +31,7 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   yaw = 0.0;
 
   //start command subscriber
-  sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel",1,&HeroChassisController::getchassisstate);
+  sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::getchassisstate, this);
 
   return true;
 }
@@ -48,25 +48,28 @@ void HeroChassisController::starting(const ros::Time &time) {
 }
 
 void HeroChassisController::update(const ros::Time &time, const ros::Duration &period) {
- compute_mecvel(Vx,Vy,yaw);
- double error1 = com1 - front_right_joint_.getVelocity();
- double error2 = com2 - front_left_joint_.getVelocity();
- double error3 = com3 - back_left_joint_.getVelocity();
- double error4 = com4 - back_right_joint_.getVelocity();
- front_right_joint_.setCommand(pid1_controller_.computeCommand(error1,period));
- front_left_joint_.setCommand(pid2_controller_.computeCommand(error2,period));
- back_left_joint_.setCommand(pid3_controller_.computeCommand(error3,period));
- back_right_joint_.setCommand(pid4_controller_.computeCommand(error4,period));
+  compute_mecvel(Vx, Vy, yaw);
+  double error1 = com1 - front_right_joint_.getVelocity();
+  double error2 = com2 - front_left_joint_.getVelocity();
+  double error3 = com3 - back_left_joint_.getVelocity();
+  double error4 = com4 - back_right_joint_.getVelocity();
+  front_right_joint_.setCommand(pid1_controller_.computeCommand(error1, period));
+  front_left_joint_.setCommand(pid2_controller_.computeCommand(error2, period));
+  back_left_joint_.setCommand(pid3_controller_.computeCommand(error3, period));
+  back_right_joint_.setCommand(pid4_controller_.computeCommand(error4, period));
 }
 
 void HeroChassisController::getchassisstate(const geometry_msgs::TwistConstPtr &msg) {
   Vx = msg->linear.x;
   Vy = msg->linear.y;
   yaw = msg->angular.z;
-  com1 = Vx-Vy-yaw*0.4875;
-  com2 = Vx+Vy+yaw*0.4875;
-  com3 = Vx+Vy-yaw*0.4875;
-  com4 = Vx-Vy+yaw*0.4875;
+}
+
+void HeroChassisController::compute_mecvel(double x, double y, double YAW) {
+  com1 = x - y - YAW * 0.4875;
+  com2 = x + y + YAW * 0.4875;
+  com3 = x + y - YAW * 0.4875;
+  com4 = x - y + YAW * 0.4875;
 }
 
 }// namespace

@@ -23,7 +23,7 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
 
   void update(const ros::Time &time, const ros::Duration &period) override;
 
-  void starting(const ros::Time& time) override;
+  void starting(const ros::Time &time) override;
 
   ros::Subscriber sub_command;
 
@@ -32,7 +32,7 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   hardware_interface::JointHandle
       front_left_joint_, front_right_joint_, back_left_joint_,
       back_right_joint_;
-
+ private:
   double com1, com2, com3, com4;
   //command of four wheels.
   double Vx, Vy, yaw;

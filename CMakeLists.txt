@@ -32,20 +32,20 @@ find_package(catkin REQUIRED
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-        INCLUDE_DIRS
-        include
-        ## This is only necessary because Eigen3 sets a non-standard EIGEN3_INCLUDE_DIR variable
-        LIBRARIES
-        CATKIN_DEPENDS
-        roscpp
-        roslint
-        controller_interface
-        hardware_interface
-        forward_command_controller
-        pluginlib
-        control_toolbox
-        geometry_msgs
-        DEPENDS
+    INCLUDE_DIRS
+    include
+    ## This is only necessary because Eigen3 sets a non-standard EIGEN3_INCLUDE_DIR variable
+    LIBRARIES
+    CATKIN_DEPENDS
+    roscpp
+    roslint
+    controller_interface
+    hardware_interface
+    forward_command_controller
+    pluginlib
+    control_toolbox
+    geometry_msgs
+    DEPENDS
 )
 
 ###########
