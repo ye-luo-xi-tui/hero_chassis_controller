@@ -20,56 +20,82 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   back_right_joint_ = effort_joint_interface->getHandle("back_right_wheel_joint");
 
   //load PID Controller using gains set on parameter server
-  pid1_controller_.init(ros::NodeHandle(n,"pid1"));
-  pid2_controller_.init(ros::NodeHandle(n,"pid2"));
-  pid3_controller_.init(ros::NodeHandle(n,"pid3"));
-  pid4_controller_.init(ros::NodeHandle(n,"pid4"));
+  pid1_controller_.init(ros::NodeHandle(n, "pid1"));
+  pid2_controller_.init(ros::NodeHandle(n, "pid2"));
+  pid3_controller_.init(ros::NodeHandle(n, "pid3"));
+  pid4_controller_.init(ros::NodeHandle(n, "pid4"));
 
   //initialiaze chassis speed
   Vx = 0.0;
   Vy = 0.0;
   yaw = 0.0;
 
-  //start command subscriber
-  sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::getchassisstate, this);
-
-  return true;
-}
-
-void HeroChassisController::starting(const ros::Time &time) {
+  //initialize command
   com1 = 0.0;
   com2 = 0.0;
   com3 = 0.0;
   com4 = 0.0;
-  pid1_controller_.reset();
-  pid2_controller_.reset();
-  pid3_controller_.reset();
-  pid4_controller_.reset();
+
+  //Start realtime state publisher
+  controller_state_publisher_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>
+          (n, "state", 1));
+
+  //start command subscriber
+  sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::get_chassis_state, this);
+
+  return true;
 }
 
 void HeroChassisController::update(const ros::Time &time, const ros::Duration &period) {
-  compute_mecvel(Vx, Vy, yaw);
+  //calculate speed of wheels
+  compute_mecvel();
+  //the error of wheels
   double error1 = com1 - front_right_joint_.getVelocity();
   double error2 = com2 - front_left_joint_.getVelocity();
   double error3 = com3 - back_left_joint_.getVelocity();
   double error4 = com4 - back_right_joint_.getVelocity();
+  //set command for wheels
   front_right_joint_.setCommand(pid1_controller_.computeCommand(error1, period));
   front_left_joint_.setCommand(pid2_controller_.computeCommand(error2, period));
   back_left_joint_.setCommand(pid3_controller_.computeCommand(error3, period));
   back_right_joint_.setCommand(pid4_controller_.computeCommand(error4, period));
+
+  if (loop_count_ % 10 == 0) {
+    if (controller_state_publisher_ && controller_state_publisher_->trylock()) {
+      controller_state_publisher_->msg_.header.stamp = time;
+      controller_state_publisher_->msg_.set_point = com1;
+      controller_state_publisher_->msg_.process_value = front_right_joint_.getVelocity();
+      controller_state_publisher_->msg_.error = error1;
+      controller_state_publisher_->msg_.time_step = period.toSec();
+      controller_state_publisher_->msg_.command = pid1_controller_.computeCommand(error1, period);
+
+      double dummy;
+      bool antiwindup;
+      pid1_controller_.getGains(controller_state_publisher_->msg_.p,
+                                controller_state_publisher_->msg_.i,
+                                controller_state_publisher_->msg_.d,
+                                controller_state_publisher_->msg_.i_clamp,
+                                dummy,
+                                antiwindup);
+      controller_state_publisher_->msg_.antiwindup = static_cast<char>(antiwindup);
+      controller_state_publisher_->unlockAndPublish();
+    }
+  }
+  loop_count_++;
 }
 
-void HeroChassisController::getchassisstate(const geometry_msgs::TwistConstPtr &msg) {
+void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr &msg) {
   Vx = msg->linear.x;
   Vy = msg->linear.y;
   yaw = msg->angular.z;
 }
 
-void HeroChassisController::compute_mecvel(double x, double y, double YAW) {
-  com1 = x - y - YAW * 0.4875;
-  com2 = x + y + YAW * 0.4875;
-  com3 = x + y - YAW * 0.4875;
-  com4 = x - y + YAW * 0.4875;
+void HeroChassisController::compute_mecvel() {
+  com1 = Vx + Vy + yaw * 0.4875;
+  com2 = Vx - Vy - yaw * 0.4875;
+  com3 = Vx + Vy - yaw * 0.4875;
+  com4 = Vx - Vy + yaw * 0.4875;
 }
 
 }// namespace

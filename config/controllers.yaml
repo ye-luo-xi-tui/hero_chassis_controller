@@ -1,10 +1,10 @@
 controller:
   hero_chassis_controller:
     type: hero_chassis_controller/HeroChassisController
-    pid1: { p: 100.0, i: 0.01, d: 10.0 }
-    pid2: { p: 100.0, i: 0.01, d: 10.0 }
-    pid3: { p: 100.0, i: 0.01, d: 10.0 }
-    pid4: { p: 100.0, i: 0.01, d: 10.0 }
+    pid1: { p: 100.0, i: 0.01, d: 50.0 }
+    pid2: { p: 100.0, i: 0.01, d: 50.0 }
+    pid3: { p: 100.0, i: 0.01, d: 50.0 }
+    pid4: { p: 100.0, i: 0.01, d: 50.0 }
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
