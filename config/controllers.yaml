@@ -5,6 +5,8 @@ controller:
     pid2: { p: 50000.0, i: 600.0, d: 20.0 }
     pid3: { p: 50000.0, i: 600.0, d: 20.0 }
     pid4: { p: 50000.0, i: 600.0, d: 20.0 }
+    Wheel_Track: 0.500
+    Wheel_Base: 0.475
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50

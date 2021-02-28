@@ -12,6 +12,7 @@
 #include <geometry_msgs/Twist.h>
 #include <control_msgs/JointControllerState.h>
 #include <realtime_tools/realtime_publisher.h>
+#define RADIUS 0.07625
 
 namespace hero_chassis_controller {
 
@@ -38,6 +39,8 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   //command of four wheels.
   double Vx, Vy, yaw;
   //speed of the chassis.
+  double Wheel_Track;
+  double Wheel_Base;
 
   std::unique_ptr<
       realtime_tools::RealtimePublisher<

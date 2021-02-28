@@ -13,6 +13,9 @@ HeroChassisController::~HeroChassisController(){
 
 bool HeroChassisController::init(hardware_interface::EffortJointInterface *effort_joint_interface,
                                  ros::NodeHandle &n) {
+  n.getParam("Wheel_Track", Wheel_Track);
+  n.getParam("Wheel_Base", Wheel_Base);
+
   //get joint handle from hardware interface
   front_left_joint_ = effort_joint_interface->getHandle("front_left_wheel_joint");
   front_right_joint_ = effort_joint_interface->getHandle("front_right_wheel_joint");
@@ -92,10 +95,10 @@ void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr
 }
 
 void HeroChassisController::compute_mecvel() {
-  com1 = Vx + Vy + yaw * 0.4875;
-  com2 = Vx - Vy - yaw * 0.4875;
-  com3 = Vx + Vy - yaw * 0.4875;
-  com4 = Vx - Vy + yaw * 0.4875;
+  com1 = (Vx + Vy + yaw * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  com2 = (Vx - Vy - yaw * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  com3 = (Vx + Vy - yaw * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  com4 = (Vx - Vy + yaw * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
 }
 
 }// namespace
