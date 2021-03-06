@@ -10,6 +10,9 @@
 #include <control_toolbox/pid.h>
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
+#include <tf/transform_broadcaster.h>
+#include <nav_msgs/Odometry.h>
+
 
 namespace hero_chassis_controller {
 
@@ -27,6 +30,8 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
 
   ros::Subscriber sub_command;
 
+  ros::Publisher odom_pub;
+
   control_toolbox::Pid pid1_controller_, pid2_controller_, pid3_controller_, pid4_controller_;
   //internal PID controllers for four wheels.
   hardware_interface::JointHandle
@@ -37,9 +42,22 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   //command of four wheels.
   double Vx, Vy, yaw;
   //speed of the chassis.
+  double Vxt, Vyt, YAW;
+
+  double velocity1, velocity2, velocity3, velocity4;
+
+  double x, y, th;
+
+  ros::Time  lasttime;
+
   void getchassisstate(const geometry_msgs::TwistConstPtr &msg);
 
   void compute_mecvel(double x, double y, double YAW);
+
+  void chassis_velocity();
+
+
+
 };
 
 } //namespace

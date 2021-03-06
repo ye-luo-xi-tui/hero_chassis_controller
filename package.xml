@@ -4,10 +4,10 @@
   <version>0.1.0</version>
   <description>a chassis controller which can control hero's chassis in gazebo</description>
   <maintainer email="1536117624@qq.com">Zhenyu Ye</maintainer>
-  <maintainer email="12331313@qq.com">Liya Cai</maintainer>
+  <maintainer email="2807368696@qq.com">Liya Cai</maintainer>
   <license>BSD</license>
   <author email="1536117624@qq.com">Zhenyu Ye</author>
-  <author>Liya Cai</author>
+  <author email="2807368696@qq.com">Liya Cai</author>
   
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
@@ -19,6 +19,8 @@
   <depend>control_toolbox</depend>
   <depend>rm_description</depend>
   <depend>geometry_msgs</depend>
+  <depend>tf</depend>
+  <depend>nav_msgs</depend>
   
   <export>
     <controller_interface plugin="${prefix}/hero_chassis_controller_plugins.xml"/>
