@@ -17,4 +17,6 @@
         controller/joint_state_controller
   "/>
 
+  <!-- launch teleop_twist_keyboard -->
+  <node name="chassis_teleop_keyboard" pkg="hero_chassis_controller" type="chassis_teleop_twist_keyboard"/>
 </launch>
