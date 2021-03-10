@@ -33,6 +33,12 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
 
   ros::Publisher odom_pub;
 
+  tf::TransformBroadcaster odom_broadcaster;
+
+  geometry_msgs::TransformStamped odom_trans;
+
+  nav_msgs::Odometry odom;
+
   control_toolbox::Pid pid1_controller_, pid2_controller_, pid3_controller_, pid4_controller_;
   //internal PID controllers for four wheels
   hardware_interface::JointHandle
@@ -40,22 +46,20 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
       back_right_joint_;
  private:
   int loop_count_;
-  double com1, com2, com3, com4;
+  double vel_cmd1, vel_cmd2, vel_cmd3, vel_cmd4;
   //command of four wheels
-  double Vx, Vy, yaw;
-  //speed of the chassis
+  double Vxe, Vye, yawe;
+  //expected speed of the chassis
   double Wheel_Track;
   double Wheel_Base;
 
-  double velocity1, velocity2, velocity3, velocity4;
+  double vel_act1, vel_act2, vel_act3, vel_act4;
 
-  double Vxr, Vyr, yawr;
-
+  double Vxa, Vya, yawa;
+  //actual speed of the chassis
   double x, y, th;
 
   ros::Time last_time;
-
-  ros::Rate r;
 
   std::unique_ptr<
       realtime_tools::RealtimePublisher<

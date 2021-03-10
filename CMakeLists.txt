@@ -19,6 +19,8 @@ find_package(catkin REQUIRED
         geometry_msgs
         control_msgs
         realtime_tools
+        tf
+        nav_msgs
         )
 
 ## System dependencies are found with CMake's conventions
@@ -49,6 +51,8 @@ catkin_package(
         geometry_msgs
         control_msgs
         realtime_tools
+        tf
+        nav_msgs
         DEPENDS
 )
 
