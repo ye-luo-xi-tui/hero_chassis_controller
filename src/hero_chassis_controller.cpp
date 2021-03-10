@@ -45,6 +45,9 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   y = 0.0;
   th = 0.0;
 
+  //initializae last_time
+  last_time = ros::Time::now();
+
   //Start realtime state publisher
   controller_state_publisher_.reset(
       new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>
@@ -54,7 +57,7 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::get_chassis_state, this);
 
   odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
-
+  ros::Rate r(1.0);
   return true;
 }
 
@@ -102,7 +105,7 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   velocity3 = back_left_joint_.getVelocity();
   velocity4 = back_right_joint_.getVelocity();
 
-  //calculate the speed of chassis.
+  //calculate the speed of chassis
   chassis_velocity();
   double dt = (time - last_time).toSec();
   double delta_x = (Vx * cos(th) - Vy * sin(th)) * dt;
@@ -145,6 +148,9 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   //publish the message
   odom_pub.publish(odom);
 
+  last_time = time;
+  r.sleep();
+
 }
 
 void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr &msg) {
@@ -161,9 +167,9 @@ void HeroChassisController::compute_mecvel() {
 }
 
 void HeroChassisController::chassis_velocity() {
-  Vx = (velocity1 + velocity2 + velocity3 + velocity4) * RADIUS / 4;
-  Vy = (velocity1 - velocity2 + velocity3 - velocity4) * RADIUS / 4;
-  yaw = (velocity1 - velocity2 - velocity3 + velocity4) * RADIUS / 4 / (Wheel_Track + Wheel_Base);
+  Vxr = (velocity1 + velocity2 + velocity3 + velocity4) * RADIUS / 4;
+  Vyr = (velocity1 - velocity2 + velocity3 - velocity4) * RADIUS / 4;
+  yawr = (velocity1 - velocity2 - velocity3 + velocity4) * RADIUS / 4 / (Wheel_Track + Wheel_Base);
 }
 }// namespace
 

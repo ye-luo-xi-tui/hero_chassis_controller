@@ -34,24 +34,28 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   ros::Publisher odom_pub;
 
   control_toolbox::Pid pid1_controller_, pid2_controller_, pid3_controller_, pid4_controller_;
-  //internal PID controllers for four wheels.
+  //internal PID controllers for four wheels
   hardware_interface::JointHandle
       front_left_joint_, front_right_joint_, back_left_joint_,
       back_right_joint_;
  private:
   int loop_count_;
   double com1, com2, com3, com4;
-  //command of four wheels.
+  //command of four wheels
   double Vx, Vy, yaw;
-  //speed of the chassis.
+  //speed of the chassis
   double Wheel_Track;
   double Wheel_Base;
 
   double velocity1, velocity2, velocity3, velocity4;
 
+  double Vxr, Vyr, yawr;
+
   double x, y, th;
 
   ros::Time last_time;
+
+  ros::Rate r;
 
   std::unique_ptr<
       realtime_tools::RealtimePublisher<
@@ -60,9 +64,9 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   void get_chassis_state(const geometry_msgs::TwistConstPtr &msg);
   //call back function of subscriber
   void compute_mecvel();
-  //calculate the speed  of four wheels.
+  //calculate the speed  of four wheels
   void chassis_velocity();
-  //calculate the speed of chassis.
+  //calculate the speed of chassis
 };
 
 } //namespace
