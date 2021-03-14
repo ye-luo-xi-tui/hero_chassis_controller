@@ -52,18 +52,18 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
  private:
   int loop_count_{};
   //command of four wheels
-  double vel_cmd[5]{};
+  double vel_cmd[5]{0.0, 0.0, 0.0, 0.0, 0.0};
   //actual velocity of wheels
   double vel_act[5]{};
   //middle velocity of wheels
-  double vel_mid[5]{};
-  double Vxe{}, Vye{}, yawe{};
+  double vel_rte[5]{0.0, 0.0, 0.0, 0.0, 0.0};
+  double Vxe{0.0}, Vye{0.0}, yawe{0.0};
   //expected speed of the chassis
   double Vxa{}, Vya{}, yawa{};
   //actual speed of the chassis
   double Angle_Acceleration{};
   double dt{};
-  double x{}, y{}, th{};
+  double x{0.0}, y{0.0}, th{0.0};
   double Wheel_Track{};
   double Wheel_Base{};
   bool Odom_Framecoordinate_Mode{};
@@ -80,7 +80,7 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   void compute_mecvel();
   //calculate the speed of chassis
   void compute_chassis_velocity();
-  void compute_vel_mid();
+  void compute_vel_rte();
   void Transform_broadcast();
   void Odometry_publish();
 };

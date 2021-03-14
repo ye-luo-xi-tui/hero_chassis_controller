@@ -32,22 +32,6 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   pid3_controller_.init(ros::NodeHandle(controller_nh, "pid3"));
   pid4_controller_.init(ros::NodeHandle(controller_nh, "pid4"));
 
-  //initialiaze chassis speed
-  Vxe = 0.0;
-  Vye = 0.0;
-  yawe = 0.0;
-
-  //initialize command
-  vel_cmd[1] = 0.0;
-  vel_cmd[2] = 0.0;
-  vel_cmd[3] = 0.0;
-  vel_cmd[4] = 0.0;
-
-  //initialiaze chassis position
-  x = 0.0;
-  y = 0.0;
-  th = 0.0;
-
   //initializae last_time
   last_time = ros::Time::now();
 
@@ -78,15 +62,15 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   //publish the odometry message over ROS
   Odometry_publish();
 
-  ROS_INFO("%f", transform.getOrigin().x());
   //calculate expected speed of wheels
   compute_mecvel();
-  compute_vel_mid();
+  compute_vel_rte();
   //the error of wheels
-  double error1 = vel_mid[1] - vel_act[1];
-  double error2 = vel_mid[2] - vel_act[2];
-  double error3 = vel_mid[3] - vel_act[3];
-  double error4 = vel_mid[4] - vel_act[4];
+  double error1 = vel_rte[1] - vel_act[1];
+  double error2 = vel_rte[2] - vel_act[2];
+  double error3 = vel_rte[3] - vel_act[3];
+  double error4 = vel_rte[4] - vel_act[4];
+
   //set command for wheels
   front_right_joint_.setCommand(pid1_controller_.computeCommand(error1, period));
   front_left_joint_.setCommand(pid2_controller_.computeCommand(error2, period));
@@ -127,7 +111,7 @@ void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr
     stamped_in.header.stamp = now - ros::Duration(0.003);
     stamped_in.vector.x = Vxe;
     stamped_in.vector.y = Vye;
-    stamped_in.vector.z = 0;
+    stamped_in.vector.z = 0.0;
     listener.waitForTransform("base_link", "odom", ros::Time(0), ros::Duration(3.0));
     listener.lookupTransform("base_link", "odom", ros::Time(0), transform);
     listener.transformVector("base_link", stamped_in, stamped_out);
@@ -143,18 +127,18 @@ void HeroChassisController::compute_mecvel() {
   vel_cmd[4] = (Vxe - Vye + yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
 }
 
-void HeroChassisController::compute_vel_mid() {
+void HeroChassisController::compute_vel_rte() {
   int i;
   for (i = 1; i <= 4; i++) {
     if (vel_cmd[i] > vel_act[i]) {
-      vel_mid[i] = vel_act[i] + dt * Angle_Acceleration;
-      if (vel_mid[i] >= vel_cmd[i])
-        vel_mid[i] = vel_cmd[i];
+      vel_rte[i] += dt * Angle_Acceleration;
+      if (vel_rte[i] >= vel_cmd[i])
+        vel_rte[i] = vel_cmd[i];
     }
     if (vel_cmd[i] < vel_act[i]) {
-      vel_mid[i] = vel_act[i] - dt * Angle_Acceleration;
-      if (vel_mid[i] <= vel_cmd[i])
-        vel_mid[i] = vel_cmd[i];
+      vel_rte[i] -= dt * Angle_Acceleration;
+      if (vel_rte[i] <= vel_cmd[i])
+        vel_rte[i] = vel_cmd[i];
     }
   }
 }
