@@ -4,6 +4,7 @@
 
 #include "hero_chassis_controller/hero_chassis_controller.h"
 #include <pluginlib/class_list_macros.hpp>
+#include <memory>
 
 namespace hero_chassis_controller {
 
@@ -13,9 +14,10 @@ HeroChassisController::~HeroChassisController(){
 }
 
 bool HeroChassisController::init(hardware_interface::EffortJointInterface *effort_joint_interface,
-                                 ros::NodeHandle &n) {
-  n.getParam("Wheel_Track", Wheel_Track);
-  n.getParam("Wheel_Base", Wheel_Base);
+                                 ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
+  controller_nh.getParam("Wheel_Track", Wheel_Track);
+  controller_nh.getParam("Wheel_Base", Wheel_Base);
+  controller_nh.getParam("Odom_Framecoordinate_Mode", Odom_Framecoordinate_Mode);
 
   //get joint handle from hardware interface
   front_left_joint_ = effort_joint_interface->getHandle("front_left_wheel_joint");
@@ -24,10 +26,10 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   back_right_joint_ = effort_joint_interface->getHandle("back_right_wheel_joint");
 
   //load PID Controller using gains set on parameter server
-  pid1_controller_.init(ros::NodeHandle(n, "pid1"));
-  pid2_controller_.init(ros::NodeHandle(n, "pid2"));
-  pid3_controller_.init(ros::NodeHandle(n, "pid3"));
-  pid4_controller_.init(ros::NodeHandle(n, "pid4"));
+  pid1_controller_.init(ros::NodeHandle(controller_nh, "pid1"));
+  pid2_controller_.init(ros::NodeHandle(controller_nh, "pid2"));
+  pid3_controller_.init(ros::NodeHandle(controller_nh, "pid3"));
+  pid4_controller_.init(ros::NodeHandle(controller_nh, "pid4"));
 
   //initialiaze chassis speed
   Vxe = 0.0;
@@ -49,23 +51,33 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface *effor
   last_time = ros::Time::now();
 
   //Start realtime state publisher
-  controller_state_publisher_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>
-          (n, "state", 1));
+  controller_state_publisher_ = std::make_unique<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>>(
+      controller_nh, "state", 1);
 
   //start command subscriber
-  sub_command = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::get_chassis_state, this);
+  sub_command = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &HeroChassisController::get_chassis_state, this);
 
-  odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
+  odom_pub = root_nh.advertise<nav_msgs::Odometry>("odom", 50);
 
   return true;
 }
 
 void HeroChassisController::update(const ros::Time &time, const ros::Duration &period) {
+  now = time;
+
   vel_act1 = front_right_joint_.getVelocity();
   vel_act2 = front_left_joint_.getVelocity();
   vel_act3 = back_left_joint_.getVelocity();
   vel_act4 = back_right_joint_.getVelocity();
+
+  //calculate the speed of chassis
+  compute_chassis_velocity();
+  //broadcast Transform from "base_link" to "odom"
+  Transform_broadcast();
+  //publish the odometry message over ROS
+  Odometry_publish();
+
+  ROS_INFO("%f", transform.getOrigin().x());
   //calculate speed of wheels
   compute_mecvel();
   //the error of wheels
@@ -81,7 +93,7 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
 
   if (loop_count_ % 10 == 0) {
     if (controller_state_publisher_ && controller_state_publisher_->trylock()) {
-      controller_state_publisher_->msg_.header.stamp = time;
+      controller_state_publisher_->msg_.header.stamp = now;
       controller_state_publisher_->msg_.set_point = vel_cmd1;
       controller_state_publisher_->msg_.process_value = vel_act1;
       controller_state_publisher_->msg_.error = error1;
@@ -101,12 +113,42 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
     }
   }
   loop_count_++;
+  last_time = now;
+}
 
+void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr &msg) {
+  Vxe = msg->linear.x;
+  Vye = msg->linear.y;
+  yawe = msg->angular.z;
+  if (Odom_Framecoordinate_Mode) {
+    stamped_in.header.frame_id = "odom";
+    stamped_in.header.stamp = now - ros::Duration(0.003);
+    stamped_in.vector.x = Vxe;
+    stamped_in.vector.y = Vye;
+    stamped_in.vector.z = 0;
+    listener.waitForTransform("base_link", "odom", ros::Time(0), ros::Duration(3.0));
+    listener.lookupTransform("base_link", "odom", ros::Time(0), transform);
+    listener.transformVector("base_link", stamped_in, stamped_out);
+    Vxe = stamped_out.vector.x;
+    Vye = stamped_out.vector.y;
+  }
+}
 
+void HeroChassisController::compute_mecvel() {
+  vel_cmd1 = (Vxe + Vye + yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  vel_cmd2 = (Vxe - Vye - yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  vel_cmd3 = (Vxe + Vye - yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+  vel_cmd4 = (Vxe - Vye + yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
+}
 
-  //calculate the speed of chassis
-  chassis_velocity();
-  double dt = (time - last_time).toSec();
+void HeroChassisController::compute_chassis_velocity() {
+  Vxa = (vel_act1 + vel_act2 + vel_act3 + vel_act4) * RADIUS / 4;
+  Vya = (vel_act1 - vel_act2 + vel_act3 - vel_act4) * RADIUS / 4;
+  yawa = (vel_act1 - vel_act2 - vel_act3 + vel_act4) * RADIUS / 4 / (Wheel_Track + Wheel_Base);
+}
+
+void HeroChassisController::Transform_broadcast() {
+  double dt = (now - last_time).toSec();
   double delta_x = (Vxa * cos(th) - Vya * sin(th)) * dt;
   double delta_y = (Vxa * sin(th) + Vya * cos(th)) * dt;
   double delta_th = yawa * dt;
@@ -114,12 +156,10 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   y += delta_y;
   th += delta_th;
 
-  geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
+  odom_quat = tf::createQuaternionMsgFromYaw(th);
 
-  odom_trans.header.stamp = time;
-
+  odom_trans.header.stamp = now;
   odom_trans.header.frame_id = "odom";
-
   odom_trans.child_frame_id = "base_link";
   odom_trans.transform.translation.x = x;
   odom_trans.transform.translation.y = y;
@@ -127,9 +167,10 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   odom_trans.transform.rotation = odom_quat;
   //send the transform
   odom_broadcaster.sendTransform(odom_trans);
+}
 
-  //publish the odometry message over ROS
-  odom.header.stamp = time;
+void HeroChassisController::Odometry_publish() {
+  odom.header.stamp = now;
   odom.header.frame_id = "odom";
   //set the position
   odom.pose.pose.position.x = x;
@@ -145,29 +186,8 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
 
   //publish the message
   odom_pub.publish(odom);
-
-  last_time = time;
-
 }
 
-void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr &msg) {
-  Vxe = msg->linear.x;
-  Vye = msg->linear.y;
-  yawe = msg->angular.z;
-}
-
-void HeroChassisController::compute_mecvel() {
-  vel_cmd1 = (Vxe + Vye + yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
-  vel_cmd2 = (Vxe - Vye - yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
-  vel_cmd3 = (Vxe + Vye - yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
-  vel_cmd4 = (Vxe - Vye + yawe * (Wheel_Track + Wheel_Base) / 2) / RADIUS;
-}
-
-void HeroChassisController::chassis_velocity() {
-  Vxa = (vel_act1 + vel_act2 + vel_act3 + vel_act4) * RADIUS / 4;
-  Vya = (vel_act1 - vel_act2 + vel_act3 - vel_act4) * RADIUS / 4;
-  yawa = (vel_act1 - vel_act2 - vel_act3 + vel_act4) * RADIUS / 4 / (Wheel_Track + Wheel_Base);
-}
 }// namespace
 
 PLUGINLIB_EXPORT_CLASS( hero_chassis_controller::HeroChassisController,controller_interface::ControllerBase)

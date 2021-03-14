@@ -5,7 +5,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 #include <termios.h>
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh;
 
   // Init cmd_vel publisher
-  ros::Publisher pub = nh.advertise<geometry_msgs::Twist>("controller/hero_chassis_controller/cmd_vel", 1);
+  ros::Publisher pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
   // Create Twist message
   geometry_msgs::Twist twist;

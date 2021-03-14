@@ -14,6 +14,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
+#include <tf/transform_listener.h>
 
 #define RADIUS 0.07625
 
@@ -25,7 +26,7 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   ~HeroChassisController() override;
 
   bool init(hardware_interface::EffortJointInterface *effort_joint_interface,
-            ros::NodeHandle &n) override;
+            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
   void update(const ros::Time &time, const ros::Duration &period) override;
 
@@ -34,8 +35,12 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   ros::Publisher odom_pub;
 
   tf::TransformBroadcaster odom_broadcaster;
+  tf::TransformListener listener;
 
+  tf::StampedTransform transform;
   geometry_msgs::TransformStamped odom_trans;
+  geometry_msgs::Vector3Stamped stamped_in, stamped_out;
+  geometry_msgs::Quaternion odom_quat;
 
   nav_msgs::Odometry odom;
 
@@ -45,21 +50,25 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
       front_left_joint_, front_right_joint_, back_left_joint_,
       back_right_joint_;
  private:
-  int loop_count_;
-  double vel_cmd1, vel_cmd2, vel_cmd3, vel_cmd4;
+  int loop_count_{};
+
+  double vel_cmd1{}, vel_cmd2{}, vel_cmd3{}, vel_cmd4{};
   //command of four wheels
-  double Vxe, Vye, yawe;
+  double Vxe{}, Vye{}, yawe{};
   //expected speed of the chassis
-  double Wheel_Track;
-  double Wheel_Base;
+  double Wheel_Track{};
+  double Wheel_Base{};
 
-  double vel_act1, vel_act2, vel_act3, vel_act4;
+  bool Odom_Framecoordinate_Mode{};
 
-  double Vxa, Vya, yawa;
+  double vel_act1{}, vel_act2{}, vel_act3{}, vel_act4{};
+
+  double Vxa{}, Vya{}, yawa{};
   //actual speed of the chassis
-  double x, y, th;
+  double x{}, y{}, th{};
 
   ros::Time last_time;
+  ros::Time now;
 
   std::unique_ptr<
       realtime_tools::RealtimePublisher<
@@ -69,8 +78,10 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   //call back function of subscriber
   void compute_mecvel();
   //calculate the speed  of four wheels
-  void chassis_velocity();
+  void compute_chassis_velocity();
   //calculate the speed of chassis
+  void Transform_broadcast();
+  void Odometry_publish();
 };
 
 } //namespace
