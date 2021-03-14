@@ -7,7 +7,8 @@ controller:
     pid4: { p: 40000.0, i: 600.0, d: 60.0 }
     Wheel_Track: 0.500
     Wheel_Base: 0.475
-    Odom_Framecoordinate_Mode: True
+    Angle_Acceleration: 0.08
+    Odom_Framecoordinate_Mode: False
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50

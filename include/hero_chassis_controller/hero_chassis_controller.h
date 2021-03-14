@@ -51,21 +51,22 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
       back_right_joint_;
  private:
   int loop_count_{};
-
-  double vel_cmd1{}, vel_cmd2{}, vel_cmd3{}, vel_cmd4{};
   //command of four wheels
+  double vel_cmd[5]{};
+  //actual velocity of wheels
+  double vel_act[5]{};
+  //middle velocity of wheels
+  double vel_mid[5]{};
   double Vxe{}, Vye{}, yawe{};
   //expected speed of the chassis
-  double Wheel_Track{};
-  double Wheel_Base{};
-
-  bool Odom_Framecoordinate_Mode{};
-
-  double vel_act1{}, vel_act2{}, vel_act3{}, vel_act4{};
-
   double Vxa{}, Vya{}, yawa{};
   //actual speed of the chassis
+  double Angle_Acceleration{};
+  double dt{};
   double x{}, y{}, th{};
+  double Wheel_Track{};
+  double Wheel_Base{};
+  bool Odom_Framecoordinate_Mode{};
 
   ros::Time last_time;
   ros::Time now;
@@ -73,13 +74,13 @@ class HeroChassisController : public controller_interface::Controller<hardware_i
   std::unique_ptr<
       realtime_tools::RealtimePublisher<
           control_msgs::JointControllerState> > controller_state_publisher_;
-
-  void get_chassis_state(const geometry_msgs::TwistConstPtr &msg);
   //call back function of subscriber
-  void compute_mecvel();
+  void get_chassis_state(const geometry_msgs::TwistConstPtr &msg);
   //calculate the speed  of four wheels
-  void compute_chassis_velocity();
+  void compute_mecvel();
   //calculate the speed of chassis
+  void compute_chassis_velocity();
+  void compute_vel_mid();
   void Transform_broadcast();
   void Odometry_publish();
 };
