@@ -62,6 +62,19 @@ void HeroChassisController::update(const ros::Time &time, const ros::Duration &p
   //publish the odometry message over ROS
   Odometry_publish();
 
+  if (Odom_Framecoordinate_Mode) {
+    stamped_in.header.frame_id = "odom";
+    stamped_in.header.stamp = now - ros::Duration(0.003);
+    stamped_in.vector.x = Vxe;
+    stamped_in.vector.y = Vye;
+    stamped_in.vector.z = 0.0;
+    listener.waitForTransform("base_link", "odom", ros::Time(0), ros::Duration(3.0));
+    listener.lookupTransform("base_link", "odom", ros::Time(0), transform);
+    listener.transformVector("base_link", stamped_in, stamped_out);
+    Vxe = stamped_out.vector.x;
+    Vye = stamped_out.vector.y;
+  }
+
   //calculate expected speed of wheels
   compute_mecvel();
   compute_vel_rte();
@@ -106,18 +119,7 @@ void HeroChassisController::get_chassis_state(const geometry_msgs::TwistConstPtr
   Vxe = msg->linear.x;
   Vye = msg->linear.y;
   yawe = msg->angular.z;
-  if (Odom_Framecoordinate_Mode) {
-    stamped_in.header.frame_id = "odom";
-    stamped_in.header.stamp = now - ros::Duration(0.003);
-    stamped_in.vector.x = Vxe;
-    stamped_in.vector.y = Vye;
-    stamped_in.vector.z = 0.0;
-    listener.waitForTransform("base_link", "odom", ros::Time(0), ros::Duration(3.0));
-    listener.lookupTransform("base_link", "odom", ros::Time(0), transform);
-    listener.transformVector("base_link", stamped_in, stamped_out);
-    Vxe = stamped_out.vector.x;
-    Vye = stamped_out.vector.y;
-  }
+
 }
 
 void HeroChassisController::compute_mecvel() {
@@ -146,7 +148,7 @@ void HeroChassisController::compute_vel_rte() {
 void HeroChassisController::compute_chassis_velocity() {
   Vxa = (vel_act[1] + vel_act[2] + vel_act[3] + vel_act[4]) * RADIUS / 4;
   Vya = (vel_act[1] - vel_act[2] + vel_act[3] - vel_act[4]) * RADIUS / 4;
-  yawa = (vel_act[1] - vel_act[2] - vel_act[3] + vel_act[4]) * RADIUS / 4 / (Wheel_Track + Wheel_Base);
+  yawa = (vel_act[1] - vel_act[2] - vel_act[3] + vel_act[4]) * RADIUS / 2 / (Wheel_Track + Wheel_Base);
 }
 
 void HeroChassisController::Transform_broadcast() {
